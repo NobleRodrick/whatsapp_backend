@@ -1,0 +1,26 @@
+{
+  "name": "whatsapp_backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "NobleRodrick"
+  },
+  "author": "Alloh Nkefor Rodrick",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^4.19.2",
+    "mongodb": "4.1",
+    "mongoose": "^8.5.3",
+    "whatsapp_backend": "file:"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21"
+  }
+}
