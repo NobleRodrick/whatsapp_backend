@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import messageContent from './dbMessages.js'; // Import the model
 import Pusher from 'pusher';
+import cors from 'cors';
 
 // App configuration
 const app = express();
@@ -42,12 +43,7 @@ db.once('open', () => {
 
 // Middleware
 app.use(express.json());
-
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', '*');
-  next();
-});
+app.use(cors());
 
 // MongoDB connection URI
 const connection_uri = 'mongodb+srv://Alloh:pGWsSkPPBvUdbTI3@cluster0.lyyu1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
