@@ -1,48 +1,105 @@
-// importing  all the stuff that will be needed
-import express from 'express'
-import mongoose from 'mongoose'
-import Messages from './dbMessages.js' 
+import express from 'express';
+import mongoose from 'mongoose';
+import messageContent from './dbMessages.js'; // Import the model
+import Pusher from 'pusher';
 
-// app config
-const app = express()
-const port = process.env.PORT || 9000
+// App configuration
+const app = express();
+const port = process.env.PORT || 9000;
+const pusher = new Pusher({
+  appId: "1853325",
+  key: "8f887f7704edee3c1d69",
+  secret: "790df4d4f987db5c3aa8",
+  cluster: "mt1",
+  useTLS: true
+});
 
-// middleware
-app.use(express.json())
+const db = mongoose.connection;
 
-// DB config
-const connection_uri = 'mongodb+srv://Alloh:BygQeTkhX9IjOsW4@cluster0.lyyu1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
-mongoose.connect(connection_uri)
+db.once('open', () => {
+  console.log('DB Connected');
 
-// ????
+  const msgCollection = db.collection('messages');
+  const changeStream = msgCollection.watch();
 
-// api routes
-app.get('/', (req, res) => res.status(200).send('hello world'))
+  changeStream.on('change', (change) => {
+    console.log("A change occurred", change);
 
-app.post('/messages/new', (req, res) => {
-    const dbMessage = req.body
+    if (change.operationType === 'insert') {
+      const messageDetails = change.fullDocument;
+      pusher.trigger('messages', 'inserted', 
+        {
+        name: messageDetails.name,
+        message: messageDetails.message,
+        timestamp: messageDetails.timestamp,
+        received: messageDetails.received,
+      });
+    } else {
+      console.log('Error triggering Pusher');
+    }
+  });
+});
 
-    Messages.create(dbMessage, (err, data) => {
-        if (err){
-            res.status(500).send(err)
-        }else{
-            res.status(201).send(data)
-        }
-    })
-})
+// Middleware
+app.use(express.json());
 
-app.get('/messages/sync', (req, res) => {
-    Messages.find((err, data) => {
-        if (err){
-            res.status(500).send(err)
-        }else{
-            res.status(200).send(data)
-        }
-    })
-})
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+  next();
+});
 
-//listen
-app.listen(port, () => console.log(`listening on localhost:${port}`))
+// MongoDB connection URI
+const connection_uri = 'mongodb+srv://Alloh:pGWsSkPPBvUdbTI3@cluster0.lyyu1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
+// Connect to MongoDB
+(async () => {
+  try {
+    await mongoose.connect(connection_uri);
+    console.log('MongoDB connected successfully');
+  } catch (error) {
+    console.error('Database connection error:', error);
+    process.exit(1);
+  }
+})();
+
+// Define a schema and model for messages
+const messageSchema = new mongoose.Schema({
+  name: String,
+  received: Boolean,
+  message: String,
+  timestamp: { type: Date, default: Date.now },
+});
+
+const Message = mongoose.model('Message', messageSchema);
+
+// API Routes
+app.get('/', (req, res) => {
+  res.status(200).send('Hello World');
+});
+
+app.post('/messages/new', async (req, res) => {
+  try {
+    const dbMessage = req.body;
+    const newMessage = await Message.create(dbMessage);
+    res.status(201).send(newMessage);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+app.get('/messages/sync', async (req, res) => {
+  try {
+    const messages = await Message.find();
+    res.status(200).send(messages);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+});
 
 
