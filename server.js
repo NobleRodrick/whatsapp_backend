@@ -46,7 +46,7 @@ app.use(express.json());
 app.use(cors());
 
 // MongoDB connection URI
-const connection_uri = 'mongodb+srv://Alloh:pGWsSkPPBvUdbTI3@cluster0.lyyu1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const connection_uri = "MongoDB_setup_string";
 
 // Connect to MongoDB
 (async () => {
